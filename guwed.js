@@ -1,5 +1,6 @@
-var DEFAULT_FONT_SIZE = "50px"
-var SPACE_FOR_CURSOR = 2;
+var DEFAULT_FONT_SIZE = 50
+var SPACE_FOR_CURSOR = 5;
+var INPUTBOX_DEFAULT_WIDTH = 3;
 
 var gwStack = new Object();
 gwStack.length = 0;
@@ -42,50 +43,86 @@ function createInputbox(parent, fontSize) {
     return elem;
 }
 
-function createPower(box, powerParent) {
-    ppFontSize = powerParent.css("font-size");
-    ppFontSize = parseInt(ppFontSize.substr(0, ppFontSize.length-2));
-    newFontSize = Math.round(ppFontSize/(3/2.2));
-    return createInputbox(box, newFontSize);
+function createPower(box, powerParent, elemBefore) {
+    var newFontSize = 0;
+    if (typeof powerParent === "undefined") {
+        newFontSize = undefined;
+    } else {
+        var ppFontSize = powerParent.css("font-size");
+        ppFontSize = parseInt(ppFontSize.substr(0, ppFontSize.length-2));
+        newFontSize = Math.round(ppFontSize/(3/2.2));
+    }
+    elem = createInputbox(box, newFontSize);
+    if (typeof powerParent !== "undefined") {
+        if (typeof elemBefore !== "undefined") {
+            elem.dom.insertAfter(elemBefore);
+        }
+        else {
+            elem.dom.insertAfter(powerParent);
+        }
+    }
+    elem.parent = powerParent;
+    return elem;
 }
 
 function elemFromDom(dom) {
-    domId = dom.attr("id");
-    lastDash = domId.lastIndexOf("-");
-    id = parseInt(domId.substr(lastDash+1, domId.length-(lastDash+1)));
+    var domId = dom.attr("id");
+    var lastDash = domId.lastIndexOf("-");
+    var id = parseInt(domId.substr(lastDash+1, domId.length-(lastDash+1)));
     return gwStack[getStackAttr(id)];
 }
 
 function inputUpdateWidth(elem, addSpaceForCursor) {
-    spaceForCursor = addSpaceForCursor ? SPACE_FOR_CURSOR : 0;
-    //console.log("inputupdate: "+elem.dom.html()+": "+(elem.fake.width()+spaceForCursor));
-    elem.dom.width(elem.fake.width()+spaceForCursor);
+    content = elem.dom.html();
+    elem.fake.html(elem.dom.html());
+    if (content.length > 0) {
+        var spaceForCursor = addSpaceForCursor ? SPACE_FOR_CURSOR : 0;
+        //console.log("inputupdate: "+elem.dom.html()+": "+(elem.fake.width()+spaceForCursor));
+        elem.dom.width(elem.fake.width()+spaceForCursor);
+    } else {
+        elem.dom.width(INPUTBOX_DEFAULT_WIDTH.toString()+"px");
+    }
 }
 
 function inputHandler(box) {
+    var processStack = Array();
+
     $(document).on("keyup", ".gw-input", function(e) {
-        target = $(e.target);
+        var target = $(e.target);
         var content = target.html();
         var addSpaceForCursor = true;
-        switch(content[content.length-1]) {
-        case "^":
-            content = content.substr(0, content.length-1);
-            target.html(content);
-            newInput = createPower(box, target);
-            newInput.dom.focus();
+        var elem = elemFromDom(target);
+        while (processStack.length > 0) {
             addSpaceForCursor = false;
-        break;
+            key = processStack.pop();
+            strs = content.split(key);
+            if (key == "^") {
+                target.html(strs[0]);
+                newInput = createPower(box, target);
+                newInput.dom.focus();
+
+                newInput2 = createPower(box, elem.parent, newInput.dom);
+                newInput2.dom.html(strs[1]);
+                inputUpdateWidth(newInput2, addSpaceForCursor);
+            }
         }
 
-        elem = elemFromDom(target);
-        elem.fake.html(elem.dom.html());
         inputUpdateWidth(elem, addSpaceForCursor);
+    });
+
+    $(document).on("keypress", ".gw-input", function(e) {
+        var key = String.fromCharCode(e.charCode || e.keyCode || 0);
+        switch(key) {
+        case "^":
+            processStack.push(key);
+        break;
+        }
     });
 }
 
 function focusHandler() {
     function adjustSpaceForCursor(target, incOrDec) {
-        target = $(target);
+        var target = $(target);
         if (target.html().length > 0) {
             //console.log(target.html()+": "+(target.width()+SPACE_FOR_CURSOR*incOrDec));
             target.width(target.width()+SPACE_FOR_CURSOR*incOrDec);
@@ -112,7 +149,7 @@ function renderGuwed(domId) {
         var wrapperHtml = $('<div/>', {class: "gw-wrapper"});
 
         //Initial input box
-        firstInput = createInputbox(wrapperHtml);
+        var firstInput = createInputbox(wrapperHtml);
 
         //Create the wrap box
         var box = $("#"+domId);

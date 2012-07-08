@@ -8,13 +8,13 @@
     border-style: none; 
     border-color: Transparent;
     width: 7px;
-    resize: none;
     float: left;
     display: block;
     padding: 0px;
     margin: 0px;
     white-space: pre;
     text-align: center;
+    overflow: visible;
 }
 
 .gw-input:focus {
