@@ -1,0 +1,26 @@
+.gw-wrapper {
+    display: block;
+    float: left;
+    outline: medium solid rgb(0, 255, 0);
+}
+
+.gw-input {
+    border-style: none; 
+    border-color: Transparent;
+    overflow: hidden;
+    width: 7px;
+    resize: none;
+    float: left;
+    display: block;
+    font-size: 50px;
+    padding: 0px;
+    margin: 0px;
+}
+
+.gw-input:focus {
+    outline-width: 0;
+}
+
+.gw-input-fake {
+    display: none;
+}
