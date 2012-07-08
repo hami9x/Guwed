@@ -1,4 +1,6 @@
-var DEFAULT_INPUT_SIZE = "50px"
+var DEFAULT_FONT_SIZE = "50px"
+var SPACE_FOR_CURSOR = 2;
+
 var gwStack = new Object();
 gwStack.length = 0;
 gwStack.addElem = function(elem) {
@@ -14,28 +16,37 @@ function StackElement(domElem) {
    this.id = gwStack.length+1;
    domElem.attr("id", "gw-input-"+this.id);
    this.dom = domElem;
-   this.value = function() { return this.dom.val(); }
 }
 
-function createInputbox(parent) {
-    var inputHtml = $('<textarea/>', {class: "gw-input", rows: "1"});
+function createInputbox(parent, fontSize) {
+    var inputHtml = $('<span/>', {class: "gw-input", contenteditable: "true"});
     var elem = new StackElement(inputHtml);
-    var inputFakeHtml = $('<span/>', {class: "gw-input-fake", "id": "gw-input-fake-"+elem.id});
-    elem.fake = inputFakeHtml;
     gwStack.addElem(elem);
 
+    fontSize = fontSize || DEFAULT_FONT_SIZE;
+    inputHtml.css("font-size", fontSize.toString()+"px");
+
     parent.append(inputHtml);
-    parent.append(inputFakeHtml);
 
-    inputHtml.css("font-size", DEFAULT_INPUT_SIZE);
-    console.log("size: "+inputHtml.css("font-size"));
-    inputFakeHtml.css("font-size", inputHtml.css("font-size"));
-
+    ///Measure the height
+    var fakeInputHtml = $('<span/>', {class: "gw-input-fake", id: "gw-input-fake-"+elem.id.toString(),
+        style: "font-size: "+fontSize.toString()+"px"});
+    fakeInputHtml.html("H");
+    fakeInputHtml.ready(function() {
+    parent.append(fakeInputHtml);
+        //console.log(fakeInputHtml.css("height"));
+        inputHtml.css("height", fakeInputHtml.css("height"));
+        fakeInputHtml.html("");
+    });
+    elem.fake = fakeInputHtml;
     return elem;
 }
 
-function createPower() {
-    //var elem = newStackElem();
+function createPower(box, powerParent) {
+    ppFontSize = powerParent.css("font-size");
+    ppFontSize = parseInt(ppFontSize.substr(0, ppFontSize.length-2));
+    newFontSize = Math.round(ppFontSize/(3/2.2));
+    return createInputbox(box, newFontSize);
 }
 
 function elemFromDom(dom) {
@@ -45,29 +56,50 @@ function elemFromDom(dom) {
     return gwStack[getStackAttr(id)];
 }
 
-function inputUpdateWidth(elem) {
-    console.log("update");
-    var DEFAULT_WIDTH = "7px";
-    if (elem.value().length == 0) {
-        elem.dom.css("width", DEFAULT_WIDTH);
-    }
-    else {
-        console.log(elem.fake.css("width"));
-        elem.dom.css("width", elem.fake.css("width"));
-    }
+function inputUpdateWidth(elem, addSpaceForCursor) {
+    spaceForCursor = addSpaceForCursor ? SPACE_FOR_CURSOR : 0;
+    //console.log("inputupdate: "+elem.dom.html()+": "+(elem.fake.width()+spaceForCursor));
+    elem.dom.width(elem.fake.width()+spaceForCursor);
 }
 
-function inputHandler() {
-    $(".gw-input").keyup(function(e) {
-        switch (e.which) {
-        case 54: // ^ pressed
+function inputHandler(box) {
+    $(document).on("keyup", ".gw-input", function(e) {
+        target = $(e.target);
+        var content = target.html();
+        var addSpaceForCursor = true;
+        switch(content[content.length-1]) {
+        case "^":
+            content = content.substr(0, content.length-1);
+            target.html(content);
+            newInput = createPower(box, target);
+            newInput.dom.focus();
+            addSpaceForCursor = false;
         break;
         }
 
-        elem = elemFromDom($(e.target));
-        elem.fake.html(elem.dom.val());
-        inputUpdateWidth(elem);
+        elem = elemFromDom(target);
+        elem.fake.html(elem.dom.html());
+        inputUpdateWidth(elem, addSpaceForCursor);
     });
+}
+
+function focusHandler() {
+    function adjustSpaceForCursor(target, incOrDec) {
+        target = $(target);
+        if (target.html().length > 0) {
+            //console.log(target.html()+": "+(target.width()+SPACE_FOR_CURSOR*incOrDec));
+            target.width(target.width()+SPACE_FOR_CURSOR*incOrDec);
+        }
+    }
+    $(document).on("focusin", ".gw-input", function(e) {
+        //console.log("focusin"+$(e.target).html());
+        adjustSpaceForCursor(e.target, 1);
+    });
+    $(document).on("focusout", ".gw-input", function(e) {
+        //console.log("focusout"+$(e.target).html());
+        adjustSpaceForCursor(e.target, -1);
+    });
+
 }
 
 function jqInput(id) {
@@ -86,7 +118,7 @@ function renderGuwed(domId) {
         var box = $("#"+domId);
         wrapperHtml.append(firstInput.dom);
         box.append(wrapperHtml);
-
-        inputHandler();
+        inputHandler(wrapperHtml);
+        focusHandler();
     });
 }

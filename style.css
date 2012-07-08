@@ -7,14 +7,14 @@
 .gw-input {
     border-style: none; 
     border-color: Transparent;
-    overflow: hidden;
     width: 7px;
     resize: none;
     float: left;
     display: block;
-    font-size: 50px;
     padding: 0px;
     margin: 0px;
+    white-space: pre;
+    text-align: center;
 }
 
 .gw-input:focus {
