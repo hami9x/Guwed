@@ -1,26 +1,39 @@
 .gw-wrapper {
-    display: block;
-    float: left;
-    outline: medium solid rgb(0, 255, 0);
+    display: inline-block;
+    border: 1px solid rgb(0, 255, 0);
+    padding: 3px 10px 5px 4px;
+    position: static;
+    font-size: 50px;
 }
 
 .gw-input {
-    border-style: none; 
-    border-color: Transparent;
-    width: 7px;
-    float: left;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
     display: block;
-    padding: 0px;
-    margin: 0px;
-    white-space: pre;
-    text-align: center;
-    overflow: visible;
+    float: left;
 }
 
-.gw-input:focus {
-    outline-width: 0;
+/*.gw-input:focus {*/
+    /*outline-width: 0;*/
+/*}*/
+
+/*.gw-input-fake {*/
+    /*display: none;*/
+/*}*/
+
+.gw-caret {
+    border-left: 1px solid rgb(0, 0, 255);
+    z-index; -1000;
+    margin-right: -1px;
+    position: relative;
+    visibility: hidden;
 }
 
-.gw-input-fake {
-    display: none;
+.gw-elem {
+}
+
+.empty {
+    content: "H";
+    visibility: "hidden";
 }
