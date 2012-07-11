@@ -4,6 +4,13 @@
     padding: 3px 10px 5px 4px;
     position: static;
     font-size: 50px;
+
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .gw-input {
@@ -24,7 +31,7 @@
 
 .gw-caret {
     border-left: 1px solid rgb(0, 0, 255);
-    z-index; -1000;
+    z-index; -1;
     margin-right: -1px;
     position: relative;
     visibility: hidden;
@@ -36,4 +43,11 @@
 .empty {
     content: "H";
     visibility: "hidden";
+}
+
+.gw-math-elem {
+}
+
+#gw-selection {
+    background-color: #D0DFFA;
 }
