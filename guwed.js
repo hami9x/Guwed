@@ -119,7 +119,8 @@ function deleteSelection(wrapper) {
 }
 
 function hasSelection(wrapper) {
-    return wrapper.children("#gw-selection").length > 0;
+    selection = wrapper.children("#gw-selection");
+    return (selection.length > 0) && (selection.html().length > 0);
 }
 
 //>>> RUN <<<//
@@ -159,13 +160,26 @@ function renderGuwed(domId) {
                     fnNormalAction();
             }
 
-            function arrowKey(fnNormalAction, fnShift) {
-                fnNormalAction();
-                if (hasSelection(wrapper))
-                    deselect(wrapper);
+            function arrowKey(fnNormalAction, fnShift, selectMode, fnDeselectLast) {
                 if (e.shiftKey) {
-                    fnShift();
+                    var noShift = false;
+                    if (!hasSelection(wrapper)) createSelection(wrapper, selectMode);
+                    else {
+                        if (getRelativePos(wrapper.caret, wrapper.selection) !== selectMode) {
+                            fnDeselectLast();
+                            alert("^^^");
+                            noShift = true;
+                        }
+                    }
+                    if (!noShift) fnShift();
+                    wrapper.input.focus();
+                } else {
+                    fnNormalAction();
+                    if (hasSelection(wrapper)) {
+                        deselect(wrapper);
+                    }
                 }
+
             }
             ///
 
@@ -174,16 +188,23 @@ function renderGuwed(domId) {
                     arrowKey(function() {
                         caretMove(caret, "before", caret.prev());
                     }, function() {
-                        createSelection(wrapper, RIGHT);
-                        caret.next().appendTo(wrapper.selection);
+                        caret.prev().prependTo(wrapper.selection);
+                    }, LEFT
+                     , function() {
+                         wrapper.selection.children().eq(-1)
+                            .insertAfter(caret);
                     });
+
                 break;
                 case 39: //Right arrow
                     arrowKey(function() {
                         caretMove(caret, "after", caret.next());
                     }, function() {
-                        createSelection(wrapper, LEFT);
-                        caret.prev().appendTo(wrapper.selection);
+                        caret.next().appendTo(wrapper.selection);
+                    }, RIGHT
+                     , function() {
+                         wrapper.selection.children().eq(0)
+                            .insertBefore(caret);
                     });
                 break;
                 case 46: //delete
@@ -202,7 +223,8 @@ function renderGuwed(domId) {
                         var newElem = $('<span/>', {class: "gw-elem gw-math-elem"});
                         newElem.html(text[i]);
                         if (hasSelection(wrapper)) {
-                            wrapper.selection.replaceWith(newElem);
+                            wrapper.selection.after(newElem);
+                            deleteSelection(wrapper);
                             caretMove(wrapper.caret, "after", newElem);
                         } else {
                             newElem.insertBefore(caret);
