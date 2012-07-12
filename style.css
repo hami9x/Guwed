@@ -1,9 +1,8 @@
-.gw-wrapper {
-    display: inline-block;
+.gw-grand-wrapper {
+    font-size: 50px;
     border: 1px solid rgb(0, 255, 0);
     padding: 3px 10px 5px 4px;
     position: static;
-    font-size: 50px;
 
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -11,6 +10,11 @@
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+
+}
+
+.gw-wrapper {
+    display: inline-block;
 }
 
 .gw-input {
@@ -40,14 +44,19 @@
 .gw-elem {
 }
 
-.empty {
-    content: "H";
-    visibility: "hidden";
+.empty:after {
+    content: "i";
+    visibility: hidden;
 }
 
 .gw-math-elem {
+    display: inline;
 }
 
 #gw-selection {
     background-color: #D0DFFA;
+}
+
+#gw-selection .gw-math-elem {
+    background-color: inherit;
 }

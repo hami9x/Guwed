@@ -48,6 +48,9 @@ function caretMove(caret, position, elem) {
     case "before":
         caret.insertBefore(elem);
     break;
+    case "inside":
+        caret.appendTo(elem);
+    break;
     default:
         throw('Error: parameter 2 to caretMove is not correct.')
     }
@@ -119,8 +122,18 @@ function deleteSelection(wrapper) {
 }
 
 function hasSelection(wrapper) {
-    selection = wrapper.children("#gw-selection");
+    selection = wrapper.find("#gw-selection");
     return (selection.length > 0) && (selection.html().length > 0);
+}
+
+function createPower(wrapper) {
+    var newPower = $('<sup/>', {class: "gw-wrapper gw-math-elem empty"});
+    newPower.insertAfter(wrapper.caret);
+    caretMove(wrapper.caret, "inside", newPower);
+}
+
+function isEmpty(wrapper) {
+    return wrapper.has(".gw-math-elem").length < 1;
 }
 
 //>>> RUN <<<//
@@ -129,7 +142,7 @@ function renderGuwed(domId) {
 
         //Create the wrap box
         var box = $("#"+domId);
-        var wrapper = $('<span/>', {class: "gw-wrapper empty"});
+        var wrapper = $('<span/>', {class: "gw-grand-wrapper gw-nobksp-wrapper gw-wrapper empty"});
         wrapper.appendTo(box);
 
         initSelection(wrapper);
@@ -153,11 +166,25 @@ function renderGuwed(domId) {
             key = e.which;
 
             //Helper functions for key processing
-            function delOrBksp(fnNormalAction) {
-                if (hasSelection(wrapper))
-                    deleteSelection(wrapper);
-                else
-                    fnNormalAction();
+            function delOrBksp(elemToRemove) {
+                var rmSelection = false;
+                if (hasSelection(wrapper)) {
+                    elemToRemove = wrapper.selection;
+                    rmSelection = true;
+                }
+                if (elemToRemove.length > 0) {
+                    parent = elemToRemove.parent();
+                    if (!rmSelection) {
+                        elemToRemove.remove();
+                    }
+                    else {
+                        deleteSelection(wrapper);
+                    }
+                    //console.log(parent.html());
+                    if (isEmpty(parent)) {
+                        parent.addClass("empty");
+                    }
+                }
             }
 
             function arrowKey(fnNormalAction, fnShift, selectMode, fnDeselectLast) {
@@ -167,7 +194,6 @@ function renderGuwed(domId) {
                     else {
                         if (getRelativePos(wrapper.caret, wrapper.selection) !== selectMode) {
                             fnDeselectLast();
-                            alert("^^^");
                             noShift = true;
                         }
                     }
@@ -181,7 +207,26 @@ function renderGuwed(domId) {
                 }
 
             }
+
             ///
+            //
+            var fnDefault = function() {
+                var text = th.val();
+                for (var i=0; i<text.length; i++) {
+                    var newElem = $('<span/>', {class: "gw-elem gw-math-elem"});
+                    newElem.html(text[i]);
+                    if (hasSelection(wrapper)) {
+                        wrapper.selection.after(newElem);
+                        deleteSelection(wrapper);
+                        caretMove(wrapper.caret, "after", newElem);
+                    } else {
+                        newElem.insertBefore(caret);
+                    }
+                    newElem.parent().removeClass("empty");
+                }
+                th.val("");
+            };
+
 
             switch (key) {
                 case 37: //Left arrow
@@ -208,33 +253,27 @@ function renderGuwed(domId) {
                     });
                 break;
                 case 46: //delete
-                    delOrBksp(function() {
-                        caret.next().remove();
-                    });
+                    delOrBksp(caret.next());
                 break;
                 case 8: //backspace
-                    delOrBksp(function() {
-                        caret.prev().remove();
-                    });
-                break;
-                default:
-                    var text = th.val();
-                    for (var i=0; i<text.length; i++) {
-                        var newElem = $('<span/>', {class: "gw-elem gw-math-elem"});
-                        newElem.html(text[i]);
-                        if (hasSelection(wrapper)) {
-                            wrapper.selection.after(newElem);
-                            deleteSelection(wrapper);
-                            caretMove(wrapper.caret, "after", newElem);
-                        } else {
-                            newElem.insertBefore(caret);
+                    var toRemove = caret.prev();
+                    delOrBksp(toRemove);
+                    if (toRemove.length < 1) {
+                        var parent = caret.parent();
+                        if (!parent.hasClass("gw-nobksp-wrapper")) {
+                            caret.insertBefore(parent);
+                            parent.remove();
                         }
                     }
-                    th.val("");
-
-                    if (wrapper.html().length > 0) {
-                        wrapper.removeClass("empty");
-                    }
+                break;
+                case 54: //6 key
+                    if (e.shiftKey) { //the ^ symbol
+                        createPower(wrapper);
+                        th.val("");
+                    } else fnDefault();
+                break;
+                default:
+                    fnDefault();
             }
         });
 
@@ -249,6 +288,7 @@ function renderGuwed(domId) {
             var th = $(this);
             //console.log("mouse move: "+th.html()+"-> "+(e.pageX-th.offset().left));
             //console.log("caret: ", wrapper.caret.index());
+            parent = th.parent();
             var startFrom = getRelativePos(wrapper.caret, th);
             if (!wrapper.inSelection) {
                 createSelection(wrapper, startFrom);
@@ -262,10 +302,10 @@ function renderGuwed(domId) {
                     var selected;
                     if (startFrom === LEFT) {
                         //console.log((th.index()+1)+" : "+(wrapper.selection.index()+1));
-                        selected = wrapper.children().slice(wrapper.selection.index()+1, th.index()+1);
+                        selected = parent.children().slice(wrapper.selection.index()+1, th.index()+1);
                         selected.appendTo(wrapper.selection);
                     } else {
-                        selected = wrapper.children().slice(th.index(), wrapper.selection.index());
+                        selected = parent.children().slice(th.index(), wrapper.selection.index());
                         selected.prependTo(wrapper.selection);
                     }
                 }
@@ -288,6 +328,7 @@ function renderGuwed(domId) {
         }
 
         wrapper.on("mousedown", ".gw-math-elem", function(e) {
+            e.stopPropagation();
             var th = $(this);
             th = deselect(wrapper, th);
             //console.log("mousedown on "+th.html());
@@ -301,14 +342,24 @@ function renderGuwed(domId) {
             );
             //th.bind("mousemove", selectionMouseMoveHandler);
             //wrapper.children(".gw-math-elem").not(th).bind("mouseover", selectionMouseOverHandler);
-            wrapper.on("mousemove", ".gw-math-elem", selectionMouseMoveHandler);
+            parent = th.parent();
+            parent.find(".gw-math-elem").bind("mousemove", selectionMouseMoveHandler);
+            wrapper.currentParent = parent;
+            //if (parent.hasClass("gw-math-elem")) {
+                //console.log("ubind parent!");
+                //parent.unbind("mousemove", selectionMouseMoveHandler);
+            //}
+        });
+
+        wrapper.on("mousedown", ".gw-wrapper.empty", function() {
+            caretMove(wrapper.caret, "inside", $(this));
         });
 
         wrapper.mouseup(function() {
                 //console.log("ubind!");
                 wrapper.inSelection = false;
                 //wrapper.children(".gw-math-elem").unbind("mouseover", selectionMouseOverHandler);
-                wrapper.off("mousemove", ".gw-math-elem", selectionMouseMoveHandler);
+                wrapper.currentParent.find(".gw-math-elem").unbind("mousemove", selectionMouseMoveHandler);
                 wrapper.input.focus();
         });
 
