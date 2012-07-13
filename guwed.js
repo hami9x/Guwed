@@ -51,6 +51,9 @@ function caretMove(caret, position, elem) {
     case "inside":
         caret.appendTo(elem);
     break;
+    case "inside-prepend":
+        caret.prependTo(elem);
+    break;
     default:
         throw('Error: parameter 2 to caretMove is not correct.')
     }
@@ -121,9 +124,13 @@ function deleteSelection(wrapper) {
     initSelection(wrapper);
 }
 
+function exists(elem) { //Check if the jquery DOM element exists
+    return elem.length > 0;
+}
+
 function hasSelection(wrapper) {
     selection = wrapper.find("#gw-selection");
-    return (selection.length > 0) && (selection.html().length > 0);
+    return exists(selection) && (selection.html().length > 0);
 }
 
 function createPower(wrapper) {
@@ -134,6 +141,28 @@ function createPower(wrapper) {
 
 function isEmpty(wrapper) {
     return wrapper.has(".gw-math-elem").length < 1;
+}
+
+function caretTraverse(wrapper, direction) {
+    var traverse = function(firstTarget, caretInsertTo) {
+        var target = firstTarget;
+        if (exists(target)) {
+            if (target.hasClass("gw-wrapper")) {
+                if (caretInsertTo === "before") caretMove(wrapper.caret, "inside", target);
+                else caretMove(wrapper.caret, "inside-prepend", target);
+            } else {
+                caretMove(wrapper.caret, caretInsertTo, target);
+            }
+        } else {
+            target = wrapper.caret.parent();
+            caretMove(wrapper.caret, caretInsertTo, target);
+        }
+    }
+    if (direction === LEFT) {
+        traverse(wrapper.caret.prev(), "before");
+    } else {
+        traverse(wrapper.caret.next(), "after");
+    }
 }
 
 //>>> RUN <<<//
@@ -172,8 +201,8 @@ function renderGuwed(domId) {
                     elemToRemove = wrapper.selection;
                     rmSelection = true;
                 }
-                if (elemToRemove.length > 0) {
-                    parent = elemToRemove.parent();
+                if (exists(elemToRemove)) {
+                    var parent = elemToRemove.parent();
                     if (!rmSelection) {
                         elemToRemove.remove();
                     }
@@ -231,7 +260,7 @@ function renderGuwed(domId) {
             switch (key) {
                 case 37: //Left arrow
                     arrowKey(function() {
-                        caretMove(caret, "before", caret.prev());
+                        caretTraverse(wrapper, LEFT);
                     }, function() {
                         caret.prev().prependTo(wrapper.selection);
                     }, LEFT
@@ -243,7 +272,7 @@ function renderGuwed(domId) {
                 break;
                 case 39: //Right arrow
                     arrowKey(function() {
-                        caretMove(caret, "after", caret.next());
+                        caretTraverse(wrapper, RIGHT);
                     }, function() {
                         caret.next().appendTo(wrapper.selection);
                     }, RIGHT
@@ -258,7 +287,7 @@ function renderGuwed(domId) {
                 case 8: //backspace
                     var toRemove = caret.prev();
                     delOrBksp(toRemove);
-                    if (toRemove.length < 1) {
+                    if (!exists(toRemove)) {
                         var parent = caret.parent();
                         if (!parent.hasClass("gw-nobksp-wrapper")) {
                             caret.insertBefore(parent);
