@@ -44,11 +44,6 @@
 .gw-elem {
 }
 
-.empty:after {
-    content: "i";
-    visibility: hidden;
-}
-
 .gw-math-elem {
     display: inline;
 }
@@ -59,4 +54,28 @@
 
 #gw-selection .gw-math-elem {
     background-color: inherit;
+}
+
+.fraction {
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 70%;
+}
+
+.numerator, .denominator {
+    text-align: center;
+}
+
+.denominator {
+    display: inline-block;
+}
+
+.numerator {
+    border-top: 1px solid;
+    display: block;
+}
+
+.empty:after {
+    content: "i";
+    visibility: hidden;
 }

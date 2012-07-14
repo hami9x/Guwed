@@ -44,15 +44,19 @@ function caretMove(caret, position, elem) {
     switch (position) {
     case "after":
         caret.insertAfter(elem);
+        console.log("after "+elem.html());
     break;
     case "before":
         caret.insertBefore(elem);
+        console.log("before "+elem.html());
     break;
     case "inside":
         caret.appendTo(elem);
+        console.log("appendTo "+elem.html());
     break;
     case "inside-prepend":
         caret.prependTo(elem);
+        console.log("prependTo "+elem.html());
     break;
     default:
         throw('Error: parameter 2 to caretMove is not correct.')
@@ -139,6 +143,16 @@ function createPower(wrapper) {
     caretMove(wrapper.caret, "inside", newPower);
 }
 
+function createFraction(wrapper) {
+    var newFraction = $('<span/>', {class: "gw-wrapper gw-math-elem fraction"});
+    newFraction.insertAfter(wrapper.caret);
+    var denominator = $('<span/>', {class: "gw-wrapper gw-math-elem empty denominator"});
+    denominator.appendTo(newFraction);
+    var numerator = $('<span/>', {class: "gw-wrapper gw-math-elem empty numerator"});
+    numerator.appendTo(newFraction);
+    caretMove(wrapper.caret, "inside", denominator);
+}
+
 function isEmpty(wrapper) {
     return wrapper.has(".gw-math-elem").length < 1;
 }
@@ -173,6 +187,7 @@ function renderGuwed(domId) {
         var box = $("#"+domId);
         var wrapper = $('<span/>', {class: "gw-grand-wrapper gw-nobksp-wrapper gw-wrapper empty"});
         wrapper.appendTo(box);
+        wrapper.currentParent = wrapper;
 
         initSelection(wrapper);
         wrapper.inSelection = false;
@@ -262,7 +277,7 @@ function renderGuwed(domId) {
                     arrowKey(function() {
                         caretTraverse(wrapper, LEFT);
                     }, function() {
-                        caret.prev().prependTo(wrapper.selection);
+                        wrapper.caret.prev().prependTo(wrapper.selection);
                     }, LEFT
                      , function() {
                          wrapper.selection.children().eq(-1)
@@ -274,7 +289,7 @@ function renderGuwed(domId) {
                     arrowKey(function() {
                         caretTraverse(wrapper, RIGHT);
                     }, function() {
-                        caret.next().appendTo(wrapper.selection);
+                        wrapper.caret.next().appendTo(wrapper.selection);
                     }, RIGHT
                      , function() {
                          wrapper.selection.children().eq(0)
@@ -282,15 +297,15 @@ function renderGuwed(domId) {
                     });
                 break;
                 case 46: //delete
-                    delOrBksp(caret.next());
+                    delOrBksp(wrapper.caret.next());
                 break;
                 case 8: //backspace
-                    var toRemove = caret.prev();
+                    var toRemove = wrapper.caret.prev();
                     delOrBksp(toRemove);
                     if (!exists(toRemove)) {
-                        var parent = caret.parent();
+                        var parent = wrapper.caret.parent();
                         if (!parent.hasClass("gw-nobksp-wrapper")) {
-                            caret.insertBefore(parent);
+                            caretMove(caret, "before", parent);
                             parent.remove();
                         }
                     }
@@ -301,8 +316,15 @@ function renderGuwed(domId) {
                         th.val("");
                     } else fnDefault();
                 break;
+                case 191:
+                    if (!e.shiftKey) {
+                        //alert("334");
+                        createFraction(wrapper);
+                        th.val("");
+                    } else fnDefault();
+                break;
                 default:
-                    fnDefault();
+                    if (key!=16) fnDefault();
             }
         });
 
@@ -360,7 +382,7 @@ function renderGuwed(domId) {
             e.stopPropagation();
             var th = $(this);
             th = deselect(wrapper, th);
-            //console.log("mousedown on "+th.html());
+            console.log("mousedown on "+th.html());
             isLeftOrRightHalf(e.pageX, th,
                 function() {
                     caretMove(wrapper.caret, "before", th);
@@ -372,8 +394,9 @@ function renderGuwed(domId) {
             //th.bind("mousemove", selectionMouseMoveHandler);
             //wrapper.children(".gw-math-elem").not(th).bind("mouseover", selectionMouseOverHandler);
             parent = th.parent();
-            parent.find(".gw-math-elem").bind("mousemove", selectionMouseMoveHandler);
             wrapper.currentParent = parent;
+            parent.find(".gw-math-elem").bind("mousemove", selectionMouseMoveHandler);
+            //console.log("down: "+wrapper.currentParent.html());
             //if (parent.hasClass("gw-math-elem")) {
                 //console.log("ubind parent!");
                 //parent.unbind("mousemove", selectionMouseMoveHandler);
@@ -389,6 +412,8 @@ function renderGuwed(domId) {
                 wrapper.inSelection = false;
                 //wrapper.children(".gw-math-elem").unbind("mouseover", selectionMouseOverHandler);
                 wrapper.currentParent.find(".gw-math-elem").unbind("mousemove", selectionMouseMoveHandler);
+                wrapper.currentParent = wrapper;
+                //console.log("up: "+wrapper.currentParent.html());
                 wrapper.input.focus();
         });
 
