@@ -44,19 +44,19 @@ function caretMove(caret, position, elem) {
     switch (position) {
     case "after":
         caret.insertAfter(elem);
-        console.log("after "+elem.html());
+        //console.log("after "+elem.html());
     break;
     case "before":
         caret.insertBefore(elem);
-        console.log("before "+elem.html());
+        //console.log("before "+elem.html());
     break;
     case "inside":
         caret.appendTo(elem);
-        console.log("appendTo "+elem.html());
+        //console.log("appendTo "+elem.html());
     break;
     case "inside-prepend":
         caret.prependTo(elem);
-        console.log("prependTo "+elem.html());
+        //console.log("prependTo "+elem.html());
     break;
     default:
         throw('Error: parameter 2 to caretMove is not correct.')
@@ -104,6 +104,7 @@ function createSelection(wrapper, startFrom) {
 }
 
 function deselect(wrapper, returnElem) {
+    wrapper.caret.detach();
     var wouldReturn = returnElem && isSelected(returnElem);
     if (wouldReturn) returnElem.attr("id", "deselect-return");
     wrapper.selection.replaceWith(wrapper.selection.html());
@@ -176,6 +177,10 @@ function caretTraverse(wrapper, direction) {
         traverse(wrapper.caret.prev(), "before");
     } else {
         traverse(wrapper.caret.next(), "after");
+    }
+
+    if (wrapper.caret.parent().hasClass("fraction")) {
+        caretTraverse(wrapper, direction);
     }
 }
 
@@ -381,8 +386,8 @@ function renderGuwed(domId) {
         wrapper.on("mousedown", ".gw-math-elem", function(e) {
             e.stopPropagation();
             var th = $(this);
+            //console.log("mousedown on "+th.html());
             th = deselect(wrapper, th);
-            console.log("mousedown on "+th.html());
             isLeftOrRightHalf(e.pageX, th,
                 function() {
                     caretMove(wrapper.caret, "before", th);
