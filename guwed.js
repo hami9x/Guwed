@@ -400,7 +400,7 @@ function renderGuwed(domId) {
             //wrapper.children(".gw-math-elem").not(th).bind("mouseover", selectionMouseOverHandler);
             parent = th.parent();
             wrapper.currentParent = parent;
-            parent.find(".gw-math-elem").bind("mousemove", selectionMouseMoveHandler);
+            parent.children(".gw-math-elem").bind("mousemove", selectionMouseMoveHandler);
             //console.log("down: "+wrapper.currentParent.html());
             //if (parent.hasClass("gw-math-elem")) {
                 //console.log("ubind parent!");
